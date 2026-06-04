@@ -6,6 +6,7 @@ from typing import Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Header, HTTPException
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
 load_dotenv()
@@ -227,3 +228,122 @@ def negotiate(
         "final_offer": counter,
         "message": f"I’m not able to get to ${carrier_offer:,.0f}. The best I can do right now is ${counter:,.0f}. Would that work?"
     }
+
+@app.get("/metrics")
+def get_metrics(x_api_key: Optional[str] = Header(None)):
+    check_api_key(x_api_key)
+
+    try:
+        with open("offers.json", "r") as file:
+            offers = json.load(file)
+    except FileNotFoundError:
+        offers = []
+
+    total_calls = len(offers)
+    accepted_counteroffers = sum(1 for o in offers if o.get("outcome") == "accepted_counteroffer")
+    accepted_listed_rate = sum(1 for o in offers if o.get("outcome") == "accepted_listed_rate")
+    no_agreement = sum(1 for o in offers if o.get("outcome") == "no_agreement_price")
+
+    final_offers = [
+        o.get("final_offer") for o in offers
+        if isinstance(o.get("final_offer"), (int, float))
+    ]
+
+    average_final_offer = sum(final_offers) / len(final_offers) if final_offers else 0
+
+    sentiment_counts = {}
+    for offer in offers:
+        sentiment = offer.get("sentiment", "unknown")
+        sentiment_counts[sentiment] = sentiment_counts.get(sentiment, 0) + 1
+
+    return {
+        "total_calls": total_calls,
+        "accepted_counteroffers": accepted_counteroffers,
+        "accepted_listed_rate": accepted_listed_rate,
+        "no_agreement": no_agreement,
+        "average_final_offer": average_final_offer,
+        "sentiment_counts": sentiment_counts,
+        "recent_offers": offers[-10:]
+    }
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard():
+    try:
+        with open("offers.json", "r") as file:
+            offers = json.load(file)
+    except FileNotFoundError:
+        offers = []
+
+    total_calls = len(offers)
+    accepted = sum(
+        1 for o in offers
+        if o.get("outcome") in ["accepted_counteroffer", "accepted_listed_rate"]
+    )
+
+    acceptance_rate = round((accepted / total_calls) * 100, 1) if total_calls else 0
+
+    rows = ""
+    for offer in offers[-10:]:
+        rows += f"""
+        <tr>
+            <td>{offer.get("call_id", "")}</td>
+            <td>{offer.get("mc_number", "")}</td>
+            <td>{offer.get("carrier_name", "")}</td>
+            <td>{offer.get("load_id", "")}</td>
+            <td>${offer.get("loadboard_rate", "")}</td>
+            <td>${offer.get("final_offer", "")}</td>
+            <td>{offer.get("outcome", "")}</td>
+            <td>{offer.get("sentiment", "")}</td>
+        </tr>
+        """
+
+    return f"""
+    <html>
+    <head>
+        <title>Inbound Carrier Sales Dashboard</title>
+        <style>
+            body {{ font-family: Arial, sans-serif; margin: 40px; }}
+            .cards {{ display: flex; gap: 20px; margin-bottom: 30px; }}
+            .card {{ border: 1px solid #ddd; border-radius: 8px; padding: 20px; width: 220px; }}
+            .metric {{ font-size: 28px; font-weight: bold; }}
+            table {{ border-collapse: collapse; width: 100%; }}
+            th, td {{ border: 1px solid #ddd; padding: 10px; text-align: left; }}
+            th {{ background-color: #f4f4f4; }}
+        </style>
+    </head>
+    <body>
+        <h1>Inbound Carrier Sales Dashboard</h1>
+
+        <div class="cards">
+            <div class="card">
+                <div>Total Calls</div>
+                <div class="metric">{total_calls}</div>
+            </div>
+            <div class="card">
+                <div>Accepted Loads</div>
+                <div class="metric">{accepted}</div>
+            </div>
+            <div class="card">
+                <div>Acceptance Rate</div>
+                <div class="metric">{acceptance_rate}%</div>
+            </div>
+        </div>
+
+        <h2>Recent Carrier Calls</h2>
+        <table>
+            <tr>
+                <th>Call ID</th>
+                <th>MC Number</th>
+                <th>Carrier</th>
+                <th>Load ID</th>
+                <th>Listed Rate</th>
+                <th>Final Offer</th>
+                <th>Outcome</th>
+                <th>Sentiment</th>
+            </tr>
+            {rows}
+        </table>
+    </body>
+    </html>
+    """
