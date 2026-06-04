@@ -33,6 +33,8 @@ def health():
 def verify_carrier(mc_number: str, x_api_key: Optional[str] = Header(None)):
     check_api_key(x_api_key)
 
+    mc_number = "".join(char for char in mc_number if char.isdigit())
+
     mock_carriers = {
         "123456": {
             "mc_number": "123456",
