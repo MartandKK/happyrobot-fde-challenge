@@ -1,5 +1,6 @@
 import json
 import os
+import requests
 from datetime import datetime
 from typing import Optional
 
@@ -33,8 +34,11 @@ def health():
 def verify_carrier(mc_number: str, x_api_key: Optional[str] = Header(None)):
     check_api_key(x_api_key)
 
+    # Normalize spoken/transcribed MC numbers like "12 3456", "123,456", or "MC 123456"
     mc_number = "".join(char for char in mc_number if char.isdigit())
 
+    # Mock demo carriers first for reliable demo
+    # This keeps your HappyRobot demo stable while still supporting live FMCSA lookup below.
     mock_carriers = {
         "123456": {
             "mc_number": "123456",
@@ -54,19 +58,64 @@ def verify_carrier(mc_number: str, x_api_key: Optional[str] = Header(None)):
         }
     }
 
-    carrier = mock_carriers.get(mc_number)
+    if mc_number in mock_carriers:
+        return mock_carriers[mc_number]
 
-    if not carrier:
-        return {
-            "mc_number": mc_number,
-            "carrier_name": "Unknown Carrier",
-            "eligible": False,
-            "authority_status": "NOT_FOUND",
-            "insurance_status": "UNKNOWN",
-            "safety_rating": "UNKNOWN"
-        }
+    fmcsa_api_key = os.getenv("FMCSA_API_KEY")
 
-    return carrier
+    # Try live FMCSA lookup for all other MC numbers
+    if fmcsa_api_key:
+        try:
+            url = f"https://mobile.fmcsa.dot.gov/qc/services/carriers/docket-number/{mc_number}"
+
+            response = requests.get(
+                url,
+                params={"webKey": fmcsa_api_key},
+                timeout=10
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                carrier_data = data.get("content", data)
+
+                if isinstance(carrier_data, list) and carrier_data:
+                    carrier_data = carrier_data[0]
+
+                if isinstance(carrier_data, dict) and carrier_data:
+                    carrier_name = (
+                        carrier_data.get("legalName")
+                        or carrier_data.get("dbaName")
+                    )
+
+                    fmcsa_mc_number = carrier_data.get("mcNumber")
+                    allow_to_operate = carrier_data.get("allowToOperate")
+                    out_of_service = carrier_data.get("outOfService")
+
+                    # Only trust FMCSA if it gives real carrier data
+                    if carrier_name or fmcsa_mc_number or allow_to_operate:
+                        eligible = allow_to_operate == "Y" and out_of_service != "Y"
+
+                        return {
+                            "mc_number": str(fmcsa_mc_number or mc_number),
+                            "carrier_name": carrier_name or "Unknown Carrier",
+                            "eligible": eligible,
+                            "authority_status": "ACTIVE" if allow_to_operate == "Y" else "INACTIVE",
+                            "insurance_status": "UNKNOWN",
+                            "safety_rating": carrier_data.get("safetyRating") or "UNKNOWN"
+                        }
+
+        except Exception:
+            # If FMCSA fails, return standard not-found response below
+            pass
+
+    return {
+        "mc_number": mc_number,
+        "carrier_name": "Unknown Carrier",
+        "eligible": False,
+        "authority_status": "NOT_FOUND",
+        "insurance_status": "UNKNOWN",
+        "safety_rating": "UNKNOWN"
+    }
 
 
 @app.get("/loads/search")
