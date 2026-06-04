@@ -1,0 +1,47 @@
+[
+  {
+    "load_id": "L1001",
+    "origin": "Dallas, TX",
+    "destination": "Phoenix, AZ",
+    "pickup_datetime": "2026-06-05 09:00",
+    "delivery_datetime": "2026-06-07 15:00",
+    "equipment_type": "Dry Van",
+    "loadboard_rate": 2100,
+    "notes": "Appointment required at pickup. No touch freight.",
+    "weight": 34000,
+    "commodity_type": "Consumer goods",
+    "num_of_pieces": 22,
+    "miles": 1065,
+    "dimensions": "53 ft trailer"
+  },
+  {
+    "load_id": "L1002",
+    "origin": "Los Angeles, CA",
+    "destination": "Denver, CO",
+    "pickup_datetime": "2026-06-06 11:00",
+    "delivery_datetime": "2026-06-08 13:00",
+    "equipment_type": "Reefer",
+    "loadboard_rate": 2800,
+    "notes": "Temperature controlled. Must maintain 34F.",
+    "weight": 28000,
+    "commodity_type": "Produce",
+    "num_of_pieces": 18,
+    "miles": 1015,
+    "dimensions": "53 ft reefer"
+  },
+  {
+    "load_id": "L1003",
+    "origin": "Chicago, IL",
+    "destination": "Atlanta, GA",
+    "pickup_datetime": "2026-06-05 14:00",
+    "delivery_datetime": "2026-06-06 18:00",
+    "equipment_type": "Flatbed",
+    "loadboard_rate": 1900,
+    "notes": "Straps required. Driver assist at delivery.",
+    "weight": 42000,
+    "commodity_type": "Steel beams",
+    "num_of_pieces": 12,
+    "miles": 715,
+    "dimensions": "48 ft flatbed"
+  }
+]
