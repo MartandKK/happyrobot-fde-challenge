@@ -2,138 +2,93 @@
 
 ## 1. Executive Summary
 
-This proof of concept automates inbound carrier sales calls for Acme Logistics using a HappyRobot voice agent connected to a custom FastAPI backend.
+This proof of concept automates the first layer of inbound carrier sales calls for Acme Logistics using a HappyRobot voice agent connected to a custom FastAPI backend.
 
-The system allows a carrier to call in, provide an MC number, get verified, search for an available load, hear load details, negotiate the rate, and have the final outcome saved for reporting.
+The agent can receive a carrier call, collect the MC number, verify eligibility, search available loads, pitch load details, handle rate negotiation, mock a transfer to a sales rep, and save the final offer outcome for reporting.
 
-The goal is to reduce repetitive inbound carrier-sales work while giving Acme’s team visibility into call outcomes, negotiated rates, and carrier sentiment.
+The goal is to reduce repetitive carrier-sales work while giving Acme’s team visibility into accepted loads, negotiated rates, call outcomes, and carrier sentiment.
 
 ---
 
 ## 2. Business Problem
 
-Freight brokers receive frequent inbound calls from carriers asking about available loads. These calls often require the same manual steps:
+Inbound carrier calls often follow a repetitive workflow. A sales rep needs to collect the carrier’s MC number, verify whether the carrier can work with the brokerage, search for available loads, explain load details, negotiate pricing, and record the final outcome.
 
-* Collect the carrier’s MC number
-* Verify carrier eligibility
-* Search for available loads
-* Pitch lane, pickup, delivery, equipment, and rate details
-* Handle rate negotiation
-* Transfer accepted loads to a sales rep
-* Record the offer outcome
-* Track call performance and carrier sentiment
-
-This process is repetitive and time-sensitive. Automating the first layer of inbound carrier calls can help sales reps focus on higher-value conversations and exceptions.
+This process is time-sensitive and operationally repetitive. Automating the first layer of these calls can help reps focus on higher-value exceptions, complex negotiations, and customer-facing work.
 
 ---
 
 ## 3. Proposed Solution
 
-The solution is an inbound voice agent built in HappyRobot and connected to a deployed backend API.
+The proposed solution is an inbound HappyRobot voice workflow connected to a deployed backend API.
 
-The agent can:
+The workflow uses four main tools:
 
-1. Answer inbound carrier calls through the HappyRobot web call trigger.
-2. Ask for the carrier’s MC number.
-3. Verify carrier eligibility through a backend carrier verification endpoint.
-4. Search available loads by lane and equipment type.
-5. Pitch the best matching load.
-6. Ask whether the carrier is interested.
-7. Evaluate a counteroffer using pricing rules.
-8. Mock-transfer the call when a price is agreed.
-9. Save the final offer details.
-10. Classify the outcome and sentiment.
-11. Display saved activity in a custom dashboard.
+| Tool                   | Purpose                                             |
+| ---------------------- | --------------------------------------------------- |
+| `verify_carrier`       | Verifies the carrier by MC number                   |
+| `find_available_loads` | Searches available loads by lane and equipment type |
+| `negotiate_rate`       | Evaluates carrier counteroffers                     |
+| `submit_offer`         | Saves the final call result for reporting           |
+
+The backend is built with FastAPI, deployed on Render, protected with API key authentication, and containerized with Docker.
 
 ---
 
 ## 4. Demo Workflow
 
-The primary demo flow is:
+The main demo flow is:
 
-```text
-Carrier provides MC number: 123456
-↓
-Agent verifies carrier as Sample Express LLC
-↓
-Carrier asks for dry van load from Dallas to Phoenix
-↓
-Agent finds load L1001
-↓
-Agent pitches pickup, delivery, equipment, commodity, weight, miles, and rate
-↓
-Carrier asks for $2,200
-↓
-Negotiation endpoint accepts the counteroffer
-↓
-Agent mocks transfer to sales rep
-↓
-Offer outcome is saved
-↓
-Dashboard updates
-```
+1. The carrier provides MC number `123456`.
+2. The agent verifies the carrier as `Sample Express LLC`.
+3. The carrier asks for a dry van load from Dallas to Phoenix.
+4. The agent finds load `L1001` and pitches the lane, pickup time, delivery time, equipment, weight, miles, and listed rate.
+5. The carrier asks for `$2,200`.
+6. The negotiation endpoint accepts the counteroffer.
+7. The agent confirms the price, mocks the transfer, and saves the final offer outcome.
+8. The dashboard updates with the completed call record.
+
+Expected result:
+
+Carrier: Sample Express LLC
+Load: L1001
+Lane: Dallas, TX → Phoenix, AZ
+Listed Rate: $2,100
+Final Offer: $2,200
+Outcome: accepted_counteroffer
+Sentiment: positive
 
 ---
 
 ## 5. Carrier Verification
 
-The backend includes a carrier verification endpoint:
+Carrier verification is handled through the backend endpoint:
 
-```text
 GET /carrier/verify
-```
 
-The endpoint accepts an MC number and returns:
+The endpoint accepts an MC number and returns structured carrier details, including carrier name, eligibility, authority status, insurance status, and safety rating.
 
-* MC number
-* Carrier name
-* Eligibility status
-* Authority status
-* Insurance status
-* Safety rating
+The backend is configured with an FMCSA API key through environment variables. For demo reliability, MC number `123456` uses a stable fallback profile:
 
-The backend is configured with an FMCSA API key through environment variables. For demo reliability, MC number `123456` uses a deterministic fallback carrier profile:
-
-```text
 Carrier: Sample Express LLC
 MC Number: 123456
 Authority Status: ACTIVE
 Insurance Status: VALID
 Safety Rating: SATISFACTORY
 Eligible: true
-```
 
-This keeps the demo stable while preserving an FMCSA-ready verification path.
+This keeps the walkthrough predictable while preserving an FMCSA-ready verification path.
 
 ---
 
-## 6. Load Search
+## 6. Load Search and Pricing
 
-The backend includes a load search endpoint:
+Load search is handled through:
 
-```text
 GET /loads/search
-```
 
-The demo load data is stored in a JSON file and includes the required load fields:
+The main demo load is:
 
-* load_id
-* origin
-* destination
-* pickup_datetime
-* delivery_datetime
-* equipment_type
-* loadboard_rate
-* notes
-* weight
-* commodity_type
-* num_of_pieces
-* miles
-* dimensions
-
-Primary demo load:
-
-```text
 Load ID: L1001
 Origin: Dallas, TX
 Destination: Phoenix, AZ
@@ -145,84 +100,34 @@ Weight: 34,000 lbs
 Commodity: Consumer goods
 Miles: 1,065
 Notes: Appointment required at pickup. No-touch freight.
-```
 
----
+Negotiation is handled through:
 
-## 7. Negotiation Logic
-
-The backend includes a negotiation endpoint:
-
-```text
 POST /negotiate
-```
 
-The pricing logic is intentionally simple for the proof of concept:
+For the proof of concept, the pricing logic accepts carrier offers up to 105% of the listed rate. For load L1001:
 
-* The system accepts carrier offers up to 105% of the listed loadboard rate.
-* If the carrier asks above the approval limit, the system returns a counteroffer.
-* If no agreement is reached after 3 rounds, the call is classified as `no_agreement_price`.
-
-For the demo load:
-
-```text
 Listed Rate: $2,100
 Auto-Accept Limit: $2,205
 Carrier Counteroffer: $2,200
 Decision: accept
-```
 
-The agent then says:
+The agent then responds:
 
-```text
 I can make $2,200 work for this load. Transfer was successful and now you can wrap up the conversation.
-```
 
 ---
 
-## 8. Offer Capture
+## 7. Offer Capture and Classification
 
-The final call result is saved through:
+At the end of the call, the workflow saves the final result through:
 
-```text
 POST /offers
-```
 
-Saved fields include:
+The saved record includes the carrier, load, listed rate, carrier offer, final offer, negotiation rounds, outcome, sentiment, and timestamp.
 
-* call_id
-* mc_number
-* carrier_name
-* load_id
-* loadboard_rate
-* carrier_offer
-* final_offer
-* negotiation_rounds
-* outcome
-* sentiment
-* created_at
+The workflow classifies outcomes such as:
 
-Example saved result:
-
-```text
-Call ID: CALL-001
-MC Number: 123456
-Carrier: Sample Express LLC
-Load ID: L1001
-Listed Rate: $2,100
-Carrier Offer: $2,200
-Final Offer: $2,200
-Outcome: accepted_counteroffer
-Sentiment: positive
-```
-
----
-
-## 9. Outcome and Sentiment Classification
-
-The workflow classifies call outcomes using clear labels:
-
-```text
 accepted_listed_rate
 accepted_counteroffer
 ineligible_carrier
@@ -230,112 +135,99 @@ no_matching_load
 carrier_not_interested
 no_agreement_price
 call_incomplete
-```
 
 Sentiment is classified as:
 
-```text
 positive
 neutral
 negative
-```
 
-For the main demo flow, the expected result is:
+For the main demo path:
 
-```text
 Outcome: accepted_counteroffer
 Sentiment: positive
-```
 
 ---
 
-## 10. Dashboard and Metrics
+## 8. Dashboard and Metrics
 
 A custom dashboard was built outside HappyRobot analytics.
 
-Dashboard link:
+Dashboard:
 
-```text
 https://happyrobot-fde-backend.onrender.com/dashboard
-```
 
-The dashboard displays:
+The dashboard shows:
 
 * Total calls
 * Accepted loads
 * Acceptance rate
-* Recent carrier calls
-* MC number
-* Carrier name
-* Load ID
-* Listed rate
-* Final offer
-* Outcome
-* Sentiment
+* Average final offer
+* Average rate delta
+* Accepted counteroffers
+* Positive sentiment count
+* Recent carrier call records
 
-This gives Acme Logistics visibility into the operational performance of the inbound carrier sales workflow.
+The recent call table includes MC number, carrier name, load ID, listed rate, final offer, outcome, and sentiment.
+
+This gives Acme Logistics a quick operational view of whether inbound calls are converting, how much pricing changes during negotiation, and how carriers are responding.
 
 ---
 
-## 11. Deployment and Security
+## 9. Deployment and Security
 
-The backend is built with FastAPI and deployed on Render as a Docker web service.
+The backend is deployed on Render as a Docker web service.
 
-Security measures include:
+Security and infrastructure details:
 
+* HTTPS provided through Render
 * API key authentication through the `x-api-key` header
-* Environment variables for secrets
-* FMCSA API key stored outside the codebase
-* Dockerized backend deployment
-* HTTPS through Render’s hosted service
+* FMCSA API key stored as an environment variable
+* `.env` excluded from GitHub
+* Dockerfile included for reproducible deployment
+* README includes local setup, Docker commands, and Render deployment notes
 
 Key environment variables:
 
-```text
 API_KEY
 FMCSA_API_KEY
-```
-
-The solution includes a `Dockerfile`, `requirements.txt`, and README instructions for local setup and deployment.
 
 ---
 
-## 12. Known Limitations
+## 10. Current Limitations
 
-This is a proof of concept, so the goal is to demonstrate the complete workflow rather than build a full production freight system.
+This is a proof of concept, so the focus is on demonstrating the full workflow rather than building a production-scale freight system.
 
 Current limitations:
 
 * The demo uses a small set of sample loads.
 * MC number `123456` is included as a stable demo carrier profile.
-* Load data is stored in a JSON file rather than a production TMS or loadboard.
-* Offer records are saved to a local JSON file, which may reset on Render after redeploy.
+* Load data is stored in JSON rather than a production TMS or loadboard.
+* Offer records are stored in local JSON and may reset after Render redeploy.
 * The dashboard is intentionally lightweight.
-* The sales rep transfer is mocked because web call transfer is out of scope.
-* The main demo path is optimized around load `L1001`.
-* A production version would use persistent database storage, live TMS/loadboard integrations, deeper FMCSA validation, authentication, audit logs, and richer reporting.
+* The sales rep transfer is mocked because live transfer is out of scope for the web call demo.
 
 ---
 
-## 13. Recommended Production Next Steps
+## 11. Recommended Production Next Steps
 
 For a production rollout, I would recommend:
 
 1. Connect carrier verification directly to Acme’s compliance and onboarding systems.
-2. Replace JSON load data with Acme’s TMS or loadboard integration.
-3. Store offers and calls in a persistent database.
+2. Replace JSON load data with a TMS or live loadboard integration.
+3. Store call and offer records in a persistent database.
 4. Add authentication and role-based access for dashboard users.
 5. Add call recording links and transcripts to saved offer records.
 6. Expand negotiation rules by lane, customer, equipment type, margin, and market conditions.
-7. Add rep handoff payloads so sales reps receive structured call summaries.
+7. Add structured rep handoff payloads.
 8. Add monitoring, alerting, and audit logs.
 
 ---
 
-## 14. Summary
+## 12. Summary
 
 This proof of concept demonstrates how Acme Logistics could automate the first layer of inbound carrier sales calls.
 
-The system verifies carriers, searches loads, pitches details, handles a controlled negotiation, saves the final offer, and reports use case metrics through a custom dashboard.
+The system verifies carriers, searches loads, pitches load details, handles controlled negotiation, mocks transfer, saves offer outcomes, and reports metrics through a custom dashboard.
 
-It is designed to show both the customer-facing workflow and the technical foundation needed for a more production-ready carrier sales automation system.
+It is designed to show both the customer-facing workflow and the technical foundation needed for a production-ready carrier sales automation system.
