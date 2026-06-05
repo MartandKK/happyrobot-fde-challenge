@@ -34,15 +34,12 @@ https://drive.google.com/file/d/1CK-oh-iKp0AdJK8gp1Mz1cn2VdFyZyPH/view?usp=shari
 
 Carrier says:
 
-```text
 My MC number is 123456.
 I’m looking for a dry van load from Dallas to Phoenix.
 Yes, but can you do $2,200?
-```
 
 Expected result:
 
-```text
 Carrier: Sample Express LLC
 Load: L1001
 Lane: Dallas, TX → Phoenix, AZ
@@ -51,19 +48,15 @@ Listed Rate: $2,100
 Final Offer: $2,200
 Outcome: accepted_counteroffer
 Sentiment: positive
-```
 
 Expected HappyRobot tool order:
 
-```text
 verify_carrier → find_available_loads → negotiate_rate → submit_offer
-```
 
 ---
 
 ## Architecture
 
-```text
 HappyRobot Web Call
         ↓
 Inbound Voice Agent
@@ -71,7 +64,6 @@ Inbound Voice Agent
 FastAPI Backend on Render
         ↓
 Load Data / Offer Records / Dashboard
-```
 
 | Tool                   | Purpose                    | Endpoint              |
 | ---------------------- | -------------------------- | --------------------- |
@@ -84,7 +76,6 @@ Load Data / Offer Records / Dashboard
 
 ## Demo Load
 
-```text
 Load ID: L1001
 Origin: Dallas, TX
 Destination: Phoenix, AZ
@@ -96,7 +87,6 @@ Weight: 34,000 lbs
 Commodity: Consumer goods
 Miles: 1,065
 Notes: Appointment required at pickup. No-touch freight.
-```
 
 ---
 
@@ -154,10 +144,8 @@ python -m uvicorn main:app --reload
 
 Open:
 
-```text
 http://127.0.0.1:8000/health
 http://127.0.0.1:8000/dashboard
-```
 
 ---
 
@@ -194,25 +182,19 @@ docker run -p 8000:8000 \
 
 The backend is deployed on Render as a Docker web service.
 
-```text
 Service Type: Web Service
 Runtime: Docker
 Root Directory: backend
 Branch: main
 Environment Variables: API_KEY, FMCSA_API_KEY
-```
 
 Deployment flow:
 
-```text
 Push to GitHub → Render builds Docker image → Render deploys FastAPI app
-```
 
 If auto-deploy does not trigger:
 
-```text
 Render → happyrobot-fde-backend → Manual Deploy → Deploy latest commit
-```
 
 ---
 
@@ -225,20 +207,16 @@ Render → happyrobot-fde-backend → Manual Deploy → Deploy latest commit
 
 Protected endpoints:
 
-```text
 /carrier/verify
 /loads/search
 /negotiate
 /offers
 /metrics
-```
 
 Public endpoints:
 
-```text
 /health
 /dashboard
-```
 
 ---
 
@@ -263,7 +241,3 @@ This is a proof of concept focused on showing the end-to-end workflow.
 
 ---
 
-## Additional Deliverables
-
-* Broker-facing build document: `Acme_Logistics_Build_Description.md`
-* Email to Carlos Becker with recruiter in cc
