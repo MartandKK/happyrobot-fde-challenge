@@ -23,7 +23,6 @@ https://github.com/MartandKK/happyrobot-fde-challenge
 
 HappyRobot Workflow:
 https://platform.happyrobot.ai/fdemartandkarnik/workflows/z6uyqu3i2kbd/editor/oja2egww8awd
-Note: This link may require HappyRobot workspace access.
 
 Demo Video:
 https://drive.google.com/file/d/1CK-oh-iKp0AdJK8gp1Mz1cn2VdFyZyPH/view?usp=sharing
