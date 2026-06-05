@@ -320,8 +320,8 @@ def dashboard():
             <td>{offer.get("load_id", "")}</td>
             <td>${offer.get("loadboard_rate", "")}</td>
             <td>${offer.get("final_offer", "")}</td>
-            <td>{offer.get("outcome", "")}</td>
-            <td>{offer.get("sentiment", "")}</td>
+            <td><span class="badge">{offer.get("outcome", "")}</span></td>
+            <td><span class="sentiment">{offer.get("sentiment", "")}</span></td>
         </tr>
         """
 
@@ -330,63 +330,184 @@ def dashboard():
     <head>
         <title>Inbound Carrier Sales Dashboard</title>
         <style>
-            body {{ font-family: Arial, sans-serif; margin: 40px; }}
-            .cards {{ display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 30px; }}
-            .card {{ border: 1px solid #ddd; border-radius: 8px; padding: 20px; width: 220px; }}
-            .metric {{ font-size: 28px; font-weight: bold; }}
-            table {{ border-collapse: collapse; width: 100%; }}
-            th, td {{ border: 1px solid #ddd; padding: 10px; text-align: left; }}
-            th {{ background-color: #f4f4f4; }}
+            * {{
+                box-sizing: border-box;
+            }}
+
+            body {{
+                font-family: Arial, sans-serif;
+                margin: 0;
+                background: #f6f7fb;
+                color: #111827;
+            }}
+
+            .page {{
+                max-width: 1200px;
+                margin: 0 auto;
+                padding: 40px 28px;
+            }}
+
+            .header {{
+                margin-bottom: 28px;
+            }}
+
+            h1 {{
+                margin: 0;
+                font-size: 36px;
+                letter-spacing: -0.5px;
+            }}
+
+            .subtitle {{
+                margin-top: 8px;
+                color: #6b7280;
+                font-size: 16px;
+            }}
+
+            .cards {{
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: 18px;
+                margin-bottom: 34px;
+            }}
+
+            .card {{
+                background: white;
+                border: 1px solid #e5e7eb;
+                border-radius: 14px;
+                padding: 22px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+            }}
+
+            .card-label {{
+                color: #6b7280;
+                font-size: 14px;
+                margin-bottom: 8px;
+            }}
+
+            .metric {{
+                font-size: 30px;
+                font-weight: 700;
+            }}
+
+            .section-title {{
+                font-size: 24px;
+                margin: 10px 0 16px;
+            }}
+
+            .table-card {{
+                background: white;
+                border: 1px solid #e5e7eb;
+                border-radius: 14px;
+                overflow: hidden;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+            }}
+
+            table {{
+                border-collapse: collapse;
+                width: 100%;
+            }}
+
+            th {{
+                background: #f9fafb;
+                color: #374151;
+                font-size: 13px;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+                padding: 14px;
+                text-align: left;
+                border-bottom: 1px solid #e5e7eb;
+            }}
+
+            td {{
+                padding: 14px;
+                border-bottom: 1px solid #f3f4f6;
+                font-size: 15px;
+            }}
+
+            tr:last-child td {{
+                border-bottom: none;
+            }}
+
+            .badge {{
+                display: inline-block;
+                padding: 5px 10px;
+                border-radius: 999px;
+                font-size: 13px;
+                font-weight: 600;
+                background: #ecfdf5;
+                color: #047857;
+            }}
+
+            .sentiment {{
+                display: inline-block;
+                padding: 5px 10px;
+                border-radius: 999px;
+                font-size: 13px;
+                font-weight: 600;
+                background: #eff6ff;
+                color: #1d4ed8;
+            }}
         </style>
     </head>
+
     <body>
-        <h1>Inbound Carrier Sales Dashboard</h1>
+        <div class="page">
+            <div class="header">
+                <h1>Inbound Carrier Sales Dashboard</h1>
+                <div class="subtitle">
+                    Custom reporting for carrier verification, load booking, negotiation outcomes, and call sentiment.
+                </div>
+            </div>
 
-<div class="cards">
-    <div class="card">
-        <div>Total Calls</div>
-        <div class="metric">{total_calls}</div>
-    </div>
-    <div class="card">
-        <div>Accepted Loads</div>
-        <div class="metric">{accepted}</div>
-    </div>
-    <div class="card">
-        <div>Acceptance Rate</div>
-        <div class="metric">{acceptance_rate}%</div>
-    </div>
-    <div class="card">
-        <div>Avg Final Offer</div>
-        <div class="metric">${average_final_offer:,.0f}</div>
-    </div>
-    <div class="card">
-        <div>Avg Rate Delta</div>
-        <div class="metric">${average_rate_delta:,.0f}</div>
-    </div>
-    <div class="card">
-        <div>Accepted Counteroffers</div>
-        <div class="metric">{accepted_counteroffers}</div>
-    </div>
-    <div class="card">
-        <div>Positive Sentiment</div>
-        <div class="metric">{positive_sentiment}</div>
-    </div>
-</div>
+            <div class="cards">
+                <div class="card">
+                    <div class="card-label">Total Calls</div>
+                    <div class="metric">{total_calls}</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Accepted Loads</div>
+                    <div class="metric">{accepted}</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Acceptance Rate</div>
+                    <div class="metric">{acceptance_rate}%</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Avg Final Offer</div>
+                    <div class="metric">${average_final_offer:,.0f}</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Avg Rate Delta</div>
+                    <div class="metric">${average_rate_delta:,.0f}</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Accepted Counteroffers</div>
+                    <div class="metric">{accepted_counteroffers}</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Positive Sentiment</div>
+                    <div class="metric">{positive_sentiment}</div>
+                </div>
+            </div>
 
-        <h2>Recent Carrier Calls</h2>
-        <table>
-            <tr>
-                <th>Call ID</th>
-                <th>MC Number</th>
-                <th>Carrier</th>
-                <th>Load ID</th>
-                <th>Listed Rate</th>
-                <th>Final Offer</th>
-                <th>Outcome</th>
-                <th>Sentiment</th>
-            </tr>
-            {rows}
-        </table>
+            <h2 class="section-title">Recent Carrier Calls</h2>
+
+            <div class="table-card">
+                <table>
+                    <tr>
+                        <th>Call ID</th>
+                        <th>MC Number</th>
+                        <th>Carrier</th>
+                        <th>Load ID</th>
+                        <th>Listed Rate</th>
+                        <th>Final Offer</th>
+                        <th>Outcome</th>
+                        <th>Sentiment</th>
+                    </tr>
+                    {rows}
+                </table>
+            </div>
+        </div>
     </body>
     </html>
     """
