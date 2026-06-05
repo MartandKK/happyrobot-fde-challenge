@@ -276,12 +276,39 @@ def dashboard():
         offers = []
 
     total_calls = len(offers)
+
     accepted = sum(
         1 for o in offers
         if o.get("outcome") in ["accepted_counteroffer", "accepted_listed_rate"]
     )
 
+    accepted_counteroffers = sum(
+        1 for o in offers
+        if o.get("outcome") == "accepted_counteroffer"
+    )
+
     acceptance_rate = round((accepted / total_calls) * 100, 1) if total_calls else 0
+
+    final_offers = [
+        o.get("final_offer") for o in offers
+        if isinstance(o.get("final_offer"), (int, float))
+    ]
+
+    average_final_offer = round(sum(final_offers) / len(final_offers), 2) if final_offers else 0
+
+    rate_deltas = [
+        o.get("final_offer") - o.get("loadboard_rate")
+        for o in offers
+        if isinstance(o.get("final_offer"), (int, float))
+        and isinstance(o.get("loadboard_rate"), (int, float))
+    ]
+
+    average_rate_delta = round(sum(rate_deltas) / len(rate_deltas), 2) if rate_deltas else 0
+
+    positive_sentiment = sum(
+        1 for o in offers
+        if o.get("sentiment") == "positive"
+    )
 
     rows = ""
     for offer in offers[-10:]:
@@ -304,7 +331,7 @@ def dashboard():
         <title>Inbound Carrier Sales Dashboard</title>
         <style>
             body {{ font-family: Arial, sans-serif; margin: 40px; }}
-            .cards {{ display: flex; gap: 20px; margin-bottom: 30px; }}
+            .cards {{ display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 30px; }}
             .card {{ border: 1px solid #ddd; border-radius: 8px; padding: 20px; width: 220px; }}
             .metric {{ font-size: 28px; font-weight: bold; }}
             table {{ border-collapse: collapse; width: 100%; }}
@@ -315,20 +342,36 @@ def dashboard():
     <body>
         <h1>Inbound Carrier Sales Dashboard</h1>
 
-        <div class="cards">
-            <div class="card">
-                <div>Total Calls</div>
-                <div class="metric">{total_calls}</div>
-            </div>
-            <div class="card">
-                <div>Accepted Loads</div>
-                <div class="metric">{accepted}</div>
-            </div>
-            <div class="card">
-                <div>Acceptance Rate</div>
-                <div class="metric">{acceptance_rate}%</div>
-            </div>
-        </div>
+<div class="cards">
+    <div class="card">
+        <div>Total Calls</div>
+        <div class="metric">{total_calls}</div>
+    </div>
+    <div class="card">
+        <div>Accepted Loads</div>
+        <div class="metric">{accepted}</div>
+    </div>
+    <div class="card">
+        <div>Acceptance Rate</div>
+        <div class="metric">{acceptance_rate}%</div>
+    </div>
+    <div class="card">
+        <div>Avg Final Offer</div>
+        <div class="metric">${average_final_offer:,.0f}</div>
+    </div>
+    <div class="card">
+        <div>Avg Rate Delta</div>
+        <div class="metric">${average_rate_delta:,.0f}</div>
+    </div>
+    <div class="card">
+        <div>Accepted Counteroffers</div>
+        <div class="metric">{accepted_counteroffers}</div>
+    </div>
+    <div class="card">
+        <div>Positive Sentiment</div>
+        <div class="metric">{positive_sentiment}</div>
+    </div>
+</div>
 
         <h2>Recent Carrier Calls</h2>
         <table>
