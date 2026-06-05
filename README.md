@@ -4,18 +4,9 @@
 
 This project is a proof of concept for automating inbound carrier sales calls for a freight brokerage.
 
-A carrier calls in through a HappyRobot web call, provides their MC number, gets verified, searches for an available load, hears the load details, negotiates pricing, and has the final offer outcome saved to a custom dashboard.
+A carrier calls through a HappyRobot web call, provides an MC number, gets verified, searches for an available load, negotiates pricing, and has the final offer outcome saved to a custom dashboard.
 
-The solution includes:
-
-* HappyRobot inbound voice workflow
-* FastAPI backend
-* Carrier verification endpoint with FMCSA-ready logic
-* Load search API
-* Negotiation API
-* Offer saving API
-* Custom dashboard outside HappyRobot analytics
-* Dockerized deployment on Render
+The solution includes a HappyRobot inbound voice workflow, FastAPI backend, FMCSA-ready carrier verification, load search, negotiation, offer saving, a custom dashboard outside HappyRobot analytics, and Dockerized deployment on Render.
 
 ---
 
@@ -28,27 +19,25 @@ Dashboard:
 https://happyrobot-fde-backend.onrender.com/dashboard
 
 GitHub Repository:
-<PASTE_GITHUB_REPO_LINK_HERE>
+https://github.com/MartandKK/happyrobot-fde-challenge
 
 HappyRobot Workflow:
-<PASTE_HAPPYROBOT_WORKFLOW_LINK_HERE>
+https://platform.happyrobot.ai/fdemartandkarnik/workflows/z6uyqu3i2kbd/editor/oja2egww8awd
 Note: This link may require HappyRobot workspace access.
 
 Demo Video:
-<PASTE_DEMO_VIDEO_LINK_HERE>
+https://drive.google.com/file/d/1CK-oh-iKp0AdJK8gp1Mz1cn2VdFyZyPH/view?usp=sharing
 
 ---
 
-## Demo Script
+## Demo Path
 
-Use this script for the main demo path:
+Carrier says:
 
 ```text
-Carrier: My MC number is 123456.
-
-Carrier: I’m looking for a dry van load from Dallas to Phoenix.
-
-Carrier: Yes, but can you do $2,200?
+My MC number is 123456.
+I’m looking for a dry van load from Dallas to Phoenix.
+Yes, but can you do $2,200?
 ```
 
 Expected result:
@@ -67,13 +56,7 @@ Sentiment: positive
 Expected HappyRobot tool order:
 
 ```text
-verify_carrier
-↓
-find_available_loads
-↓
-negotiate_rate
-↓
-submit_offer
+verify_carrier → find_available_loads → negotiate_rate → submit_offer
 ```
 
 ---
@@ -85,14 +68,12 @@ HappyRobot Web Call
         ↓
 Inbound Voice Agent
         ↓
-FastAPI Backend
+FastAPI Backend on Render
         ↓
 Load Data / Offer Records / Dashboard
 ```
 
-### HappyRobot Tools
-
-| Tool                   | Purpose                    | Backend Endpoint      |
+| Tool                   | Purpose                    | Endpoint              |
 | ---------------------- | -------------------------- | --------------------- |
 | `verify_carrier`       | Verifies carrier MC number | `GET /carrier/verify` |
 | `find_available_loads` | Searches available loads   | `GET /loads/search`   |
@@ -101,7 +82,7 @@ Load Data / Offer Records / Dashboard
 
 ---
 
-## Main Demo Load
+## Demo Load
 
 ```text
 Load ID: L1001
@@ -121,68 +102,39 @@ Notes: Appointment required at pickup. No-touch freight.
 
 ## API Endpoints
 
-### Health Check
+Protected endpoints require the `x-api-key` header.
 
 ```bash
 curl "https://happyrobot-fde-backend.onrender.com/health"
-```
 
-### Carrier Verification
-
-```bash
 curl -H "x-api-key: demo-secret-key" "https://happyrobot-fde-backend.onrender.com/carrier/verify?mc_number=123456"
-```
 
-### Load Search
-
-```bash
 curl -H "x-api-key: demo-secret-key" "https://happyrobot-fde-backend.onrender.com/loads/search?origin=Dallas&destination=Phoenix&equipment_type=Dry%20Van"
-```
 
-### Negotiation
-
-```bash
 curl -X POST -H "x-api-key: demo-secret-key" "https://happyrobot-fde-backend.onrender.com/negotiate?loadboard_rate=2100&carrier_offer=2200&negotiation_round=1"
-```
 
-### Metrics
-
-```bash
 curl -H "x-api-key: demo-secret-key" "https://happyrobot-fde-backend.onrender.com/metrics"
 ```
+
+The root URL is not configured as a homepage. Use `/health` to verify the API deployment and `/dashboard` to view reporting.
 
 ---
 
 ## Dashboard
 
-Dashboard link:
-
-```text
+Dashboard:
 https://happyrobot-fde-backend.onrender.com/dashboard
-```
 
-The dashboard shows:
+The dashboard shows total calls, accepted loads, acceptance rate, average final offer, average rate delta, accepted counteroffers, positive sentiment count, and recent call records with carrier, load, rate, outcome, and sentiment.
 
-* Total calls
-* Accepted loads
-* Acceptance rate
-* Recent carrier calls
-* MC number
-* Carrier name
-* Load ID
-* Listed rate
-* Final offer
-* Outcome
-* Sentiment
+Seeded example outcomes include accepted counteroffers, accepted listed-rate bookings, no-agreement calls, and ineligible carriers.
 
 ---
 
 ## Local Setup
 
-Clone the repository:
-
 ```bash
-git clone <PASTE_GITHUB_REPO_LINK_HERE>
+git clone https://github.com/MartandKK/happyrobot-fde-challenge
 cd happyrobot-fde-challenge/backend
 ```
 
@@ -193,15 +145,10 @@ API_KEY=demo-secret-key
 FMCSA_API_KEY=<your_fmcsa_api_key>
 ```
 
-Install dependencies:
+Install dependencies and run locally:
 
 ```bash
 python -m pip install -r requirements.txt
-```
-
-Run locally:
-
-```bash
 python -m uvicorn main:app --reload
 ```
 
@@ -214,7 +161,7 @@ http://127.0.0.1:8000/dashboard
 
 ---
 
-## Docker Commands
+## Docker
 
 Build the image:
 
@@ -243,27 +190,19 @@ docker run -p 8000:8000 \
 
 ---
 
-## Render Deployment Notes
+## Render Deployment
 
 The backend is deployed on Render as a Docker web service.
-
-Render configuration:
 
 ```text
 Service Type: Web Service
 Runtime: Docker
 Root Directory: backend
 Branch: main
+Environment Variables: API_KEY, FMCSA_API_KEY
 ```
 
-Environment variables configured in Render:
-
-```env
-API_KEY=demo-secret-key
-FMCSA_API_KEY=<configured in Render>
-```
-
-Deployment process:
+Deployment flow:
 
 ```text
 Push to GitHub → Render builds Docker image → Render deploys FastAPI app
@@ -279,7 +218,10 @@ Render → happyrobot-fde-backend → Manual Deploy → Deploy latest commit
 
 ## Security
 
-The backend uses API key authentication through the `x-api-key` header.
+* HTTPS is provided by Render.
+* Protected endpoints use API key authentication through the `x-api-key` header.
+* Secrets are stored as environment variables.
+* `.env` and generated files are excluded from GitHub.
 
 Protected endpoints:
 
@@ -298,49 +240,30 @@ Public endpoints:
 /dashboard
 ```
 
-Secrets are stored in environment variables and are not committed to GitHub.
-
 ---
 
 ## FMCSA Verification
 
-The backend supports FMCSA carrier verification through:
+The backend supports FMCSA carrier verification through the `FMCSA_API_KEY` environment variable.
 
-```text
-FMCSA_API_KEY
-```
-
-For demo reliability, MC number `123456` uses a deterministic fallback carrier profile:
-
-```text
-Sample Express LLC
-```
-
-This keeps the walkthrough stable while still keeping the backend FMCSA-ready.
+For demo reliability, MC number `123456` uses a deterministic fallback carrier profile, `Sample Express LLC`, while keeping the backend FMCSA-ready.
 
 ---
 
 ## Known Limitations
 
-This project is a proof of concept, so the focus is on showing the full inbound carrier sales workflow end-to-end rather than building a production-scale freight system.
+This is a proof of concept focused on showing the end-to-end workflow.
 
-* The demo uses a small set of sample loads so the walkthrough is predictable and easy to test.
-* MC number `123456` is included as a reliable demo carrier profile. The backend also supports an FMCSA API key for live carrier verification.
-* The load data is stored in a local JSON file. In a production version, this would connect to a TMS, loadboard, or internal brokerage database.
-* Offer records are currently saved to a local `offers.json` file. On Render, this data may reset after a redeploy. A production version would use a persistent database.
-* The dashboard is intentionally lightweight. It is meant to show the key use case metrics without relying on HappyRobot platform analytics.
-* The sales rep transfer is mocked with the message “Transfer was successful and now you can wrap up the conversation,” because live transfer is out of scope for the web call demo.
-* The main demo path is optimized around load `L1001`, listed at `$2,100`, with a `$2,200` accepted counteroffer.
-* A production version would add stronger database storage, live loadboard/TMS integrations, deeper FMCSA validation, user authentication, audit logs, and more detailed reporting.
+* Demo uses sample load data.
+* MC number `123456` uses a reliable demo carrier profile.
+* Load data is stored in JSON instead of a production TMS or loadboard.
+* Offer records use local JSON storage and may reset after Render redeploy.
+* Transfer to a sales rep is mocked because web call transfer is out of scope.
+* A production version would add persistent database storage, live TMS/loadboard integrations, deeper FMCSA validation, user authentication, audit logs, and richer reporting.
 
 ---
 
-## Submission Checklist
+## Additional Deliverables
 
-* Health check link
-* Dashboard link
-* GitHub repository link
-* HappyRobot workflow link
-* Demo video link
-* Broker-facing build document
+* Broker-facing build document: `Acme_Logistics_Build_Description.md`
 * Email to Carlos Becker with recruiter in cc
